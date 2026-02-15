@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bingo Game - Pro</title>
+    <title>Bingo Game - Final</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 10px; }
@@ -24,9 +24,8 @@
 
         /* Card Layout */
         .cards-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .bingo-card-wrapper { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); margin-bottom: 10px; }
+        .bingo-card-wrapper { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; }
         
-        /* Issue 2: B-I-N-G-O Headers */
         .bingo-header-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-bottom: 5px; }
         .bingo-header-cell { text-align: center; font-weight: 900; font-size: 1.4em; color: #764ba2; border-bottom: 3px solid #764ba2; }
         
@@ -35,13 +34,13 @@
         .bingo-cell.marked { background: #764ba2; color: white; }
         .bingo-cell.free { background: #ffd700; font-size: 0.7em; color: black; cursor: default; }
 
-        /* Animation */
+        /* Mismatch Animation */
         @keyframes errorPulse {
-            0% { transform: scale(1); background: white; }
-            50% { transform: scale(1.1); background: #feb2b2; border-color: red; }
-            100% { transform: scale(1); background: white; }
+            0% { transform: scale(1); background-color: #764ba2; }
+            50% { transform: scale(1.1); background-color: #ff4d4d; border-color: red; }
+            100% { transform: scale(1); background-color: #764ba2; }
         }
-        .error-animate { animation: errorPulse 0.8s infinite; border: 2px solid red !important; }
+        .error-animate { animation: errorPulse 0.5s infinite; border: 2px solid red !important; }
 
         /* Rolling Screen UI */
         .rolling-container { background: white; border-radius: 20px; padding: 25px; max-width: 600px; margin: 0 auto; text-align: center; }
@@ -52,7 +51,6 @@
         .recent-box { background: white; color: #667eea; min-width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid #667eea; }
         .recent-box:first-child { background: #667eea; color: white; transform: scale(1.3); z-index: 2; border-color: #764ba2; }
 
-        /* Issue 3: Rolling Buttons Grid */
         .rolling-buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
 
         /* Overlays */
@@ -130,51 +128,69 @@
     <script>
         let cards = [];
         let calledNumbers = [];
-        let availableNumbers = Array.from({length: 75}, (_, i) => i + 1); // Fix for Issue 1
+        let availableNumbers = Array.from({length: 75}, (_, i) => i + 1);
         let gameTitle = "Bingo Party";
         let codeReader = null;
         let currentScanningId = null;
+
+        // Base32 Charset to fit 5 bits (0-31) into 1 char
+        const BASE32_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 
         function getPrefix(num) {
             if (num <= 15) return 'B'; if (num <= 30) return 'I'; if (num <= 45) return 'N';
             if (num <= 60) return 'G'; return 'O';
         }
 
-        // --- Logic: 15-char Hex Barcode (75 bits / 5 bits each) ---
-        function generateBarcodeHex() {
+        // --- Voice Announcement (Issue 3 Fix) ---
+        function speakNumber(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop any current speech
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.rate = 0.9;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        // --- Logic: 5-bit Groups to 1 Char (Base32) ---
+        function generateBarcodeString() {
             let binary = "";
             for (let i = 1; i <= 75; i++) {
                 binary += calledNumbers.includes(i) ? "1" : "0";
             }
-            let hex = "";
+            let result = "";
             for (let i = 0; i < binary.length; i += 5) {
                 let chunk = binary.substr(i, 5);
-                hex += parseInt(chunk, 2).toString(16).toUpperCase();
+                let val = parseInt(chunk, 2);
+                result += BASE32_CHARS[val];
             }
-            return hex;
+            return result;
         }
 
-        function decodeHexToBinary(hex) {
+        function decodeStringToBinary(str) {
             let bin = "";
-            for (let i = 0; i < hex.length; i++) {
-                bin += parseInt(hex[i], 16).toString(2).padStart(5, '0');
+            for (let i = 0; i < str.length; i++) {
+                let val = BASE32_CHARS.indexOf(str[i]);
+                if (val === -1) val = 0; // Fallback
+                bin += val.toString(2).padStart(5, '0');
             }
             return bin;
         }
 
         function updateBarcode() {
-            const hex = generateBarcodeHex();
-            JsBarcode("#barcodeDisplay", hex, { format: "CODE128", width: 1.5, height: 60 });
+            const data = generateBarcodeString();
+            JsBarcode("#barcodeDisplay", data, { format: "CODE128", width: 1.5, height: 60, displayValue: false });
         }
 
-        // Issue 1 Fix: Population and draw logic
         function callNumber() {
             if (availableNumbers.length === 0) return alert("All numbers called!");
             const idx = Math.floor(Math.random() * availableNumbers.length);
             const num = availableNumbers.splice(idx, 1)[0];
             calledNumbers.push(num);
             
+            const displayText = getPrefix(num) + " " + num;
             document.getElementById('currentNumber').textContent = getPrefix(num) + "-" + num;
+            
+            speakNumber(displayText); // Trigger Voice
             updateRecentNumbers();
             updateBarcode();
             saveState();
@@ -191,7 +207,6 @@
             });
         }
 
-        // Issue 2 Fix: Card with Header
         function renderCards() {
             const container = document.getElementById('cardsContainer');
             container.innerHTML = '';
@@ -230,33 +245,46 @@
             });
         }
 
-        // Logic Fix: Only flagged if marked cell was NOT called
-        function processScan(hex) {
+        // --- Issue 1 & 2 Fix: Mismatch Logic ---
+        function processScan(scannedString) {
             closeScanner();
-            const binaryCalled = decodeHexToBinary(hex);
+            const calledBinary = decodeStringToBinary(scannedString);
             const card = cards.find(c => c.id === currentScanningId);
             let errors = false;
+
+            // Clear previous errors first
+            const allCells = document.querySelectorAll('.bingo-cell');
+            allCells.forEach(el => el.classList.remove('error-animate'));
 
             for (let r = 0; r < 5; r++) {
                 for (let c = 0; c < 5; c++) {
                     if (r === 2 && c === 2) continue;
-                    const num = card.numbers[c][r];
-                    const wasCalled = binaryCalled[num - 1] === '1';
                     
-                    if (card.marked[r][c] && !wasCalled) {
+                    const num = card.numbers[c][r];
+                    // num is 1-based, binary string is 0-based
+                    const actuallyCalled = calledBinary[num - 1] === '1';
+                    
+                    // Logic: Mismatch ONLY if User Marked it, but it was NOT called.
+                    // Missing a call (Not Marked & Called) is NOT an error.
+                    if (card.marked[r][c] === true && actuallyCalled === false) {
                         errors = true;
                         const el = document.getElementById(`cell-${card.id}-${r}-${c}`);
                         if (el) {
                             el.classList.add('error-animate');
+                            // Remove animation after 15 seconds
                             setTimeout(() => el.classList.remove('error-animate'), 15000);
                         }
                     }
                 }
             }
-            alert(errors ? "Mismatch! You marked numbers not yet called." : "Card Verified Successfully!");
+
+            if (errors) {
+                alert("❌ Incorrect! You marked numbers that haven't been called yet.");
+            } else {
+                alert("✅ Verification Successful! All marks are valid.");
+            }
         }
 
-        // Issue 3 Functions
         function showAllNumbers() {
             const container = document.getElementById('categorizedGrids');
             container.innerHTML = '';
@@ -297,6 +325,11 @@
 
         function openScanner(id) {
             currentScanningId = id;
+            
+            // Fix Issue 2: Clean previous state before opening
+            const allCells = document.querySelectorAll('.bingo-cell');
+            allCells.forEach(el => el.classList.remove('error-animate'));
+
             document.getElementById('cameraScanner').classList.add('show');
             if (!codeReader) codeReader = new ZXing.BrowserMultiFormatReader();
             codeReader.decodeFromVideoDevice(null, 'scannerVideo', (res) => { if(res) processScan(res.text); });
@@ -326,11 +359,11 @@
         }
 
         function saveState() {
-            localStorage.setItem('bingo_v3', JSON.stringify({ cards, calledNumbers, availableNumbers, gameTitle }));
+            localStorage.setItem('bingo_v4', JSON.stringify({ cards, calledNumbers, availableNumbers, gameTitle }));
         }
 
         function resumeGame() {
-            const saved = localStorage.getItem('bingo_v3');
+            const saved = localStorage.getItem('bingo_v4');
             if (saved) {
                 const s = JSON.parse(saved);
                 cards = s.cards; calledNumbers = s.calledNumbers; availableNumbers = s.availableNumbers;
@@ -352,7 +385,7 @@
             }
         }
 
-        window.onload = () => { if(!localStorage.getItem('bingo_v3')) document.getElementById('resumeBtn').style.display='none'; };
+        window.onload = () => { if(!localStorage.getItem('bingo_v4')) document.getElementById('resumeBtn').style.display='none'; };
     </script>
 </body>
 </html>
