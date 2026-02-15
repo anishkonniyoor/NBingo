@@ -10,63 +10,60 @@
 
         /* Header */
         .header { background: white; padding: 15px 20px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-        .header h1 { color: #667eea; font-size: 1.4em; }
-        .header-btn { background: #667eea; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-size: 1em; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .header h1 { color: #667eea; font-size: 1.2em; }
+        .header-btn { background: #667eea; color: white; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
         /* Screens */
         .screen { display: none; }
         .screen.active { display: block; }
 
         /* Welcome Modal */
-        .welcome-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; z-index: 3000; }
-        .welcome-modal.hidden { display: none !important; }
-        .welcome-content { background: white; padding: 30px; border-radius: 20px; text-align: center; max-width: 500px; width: 90%; }
+        .welcome-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 5000; }
+        .welcome-modal.hidden { display: none; }
+        .welcome-content { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 90%; max-width: 400px; }
 
-        /* Cards Layout */
+        /* Card Layout */
         .cards-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .bingo-card-wrapper { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; }
-        .bingo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin: 10px 0; }
+        .bingo-card-wrapper { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .bingo-header-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-bottom: 5px; }
+        .bingo-header-cell { text-align: center; font-weight: 900; font-size: 1.4em; color: #764ba2; border-bottom: 3px solid #764ba2; }
+        
+        .bingo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
         .bingo-cell { aspect-ratio: 1; background: white; border: 2px solid #667eea; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 1.2em; font-weight: bold; cursor: pointer; }
         .bingo-cell.marked { background: #764ba2; color: white; }
-        .bingo-cell.free { background: #ffd700; font-size: 0.8em; color: black; cursor: default; }
+        .bingo-cell.free { background: #ffd700; font-size: 0.7em; color: black; cursor: default; }
 
-        /* Verification Status inside Card */
-        .card-status { padding: 8px; border-radius: 8px; font-weight: bold; font-size: 0.9em; margin: 10px 0; display: none; text-align: center; }
-        .status-success { display: block; background: #c6f6d5; color: #22543d; }
-        .status-error { display: block; background: #fed7d7; color: #822727; }
-
-        @keyframes errorBlink { 0%, 100% { background: white; } 50% { background: #fc8181; } }
-        .error-blink { animation: errorBlink 0.5s ease-in-out 20; }
+        /* Mismatch Animation */
+        @keyframes mismatchPulse {
+            0% { background-color: white; transform: scale(1); }
+            50% { background-color: #feb2b2; transform: scale(1.1); border-color: red; }
+            100% { background-color: white; transform: scale(1); }
+        }
+        .error-animate { animation: mismatchPulse 0.8s infinite; z-index: 10; border: 2px solid red !important; }
 
         /* Rolling Screen UI */
         .rolling-container { background: white; border-radius: 20px; padding: 25px; max-width: 600px; margin: 0 auto; text-align: center; }
-        .barcode-section { background: #f8f9fa; padding: 10px; border-radius: 10px; margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; }
+        #currentNumber { font-size: 5em; color: #667eea; font-weight: bold; margin: 5px 0; }
+        .barcode-section { background: #f8f9fa; padding: 10px; border-radius: 10px; margin-bottom: 15px; }
         #barcodeDisplay { max-width: 100%; height: auto; }
-        #currentNumber { font-size: 4em; color: #667eea; font-weight: bold; margin: 10px 0; }
-        
-        .rolling-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn-action { padding: 15px 5px; font-size: 0.9em; background: #edf2f7; color: #4a5568; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        .btn-call-large { width: 100%; padding: 20px; background: #667eea; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1.2em; cursor: pointer; }
 
-        /* Overlays */
-        .overlay-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2500; display: none; overflow-y: auto; padding: 20px; }
-        .overlay-page.show { display: block; }
-        .letter-section { margin-bottom: 20px; }
-        .numbers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; margin-top: 10px; }
-        .number-box { background: #edf2f7; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; }
-        .number-box.called { background: #48bb78; color: white; }
+        /* Recent List */
+        .recent-numbers-container { margin: 15px 0; background: #f0f4f8; padding: 15px; border-radius: 15px; overflow: visible; }
+        .recent-list { display: flex; justify-content: center; gap: 15px; padding: 10px 0; overflow: visible; }
+        .recent-box { background: white; color: #667eea; min-width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid #667eea; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .recent-box:first-child { background: #667eea; color: white; transform: scale(1.25); border-color: #764ba2; z-index: 2; }
 
-        /* Scanner */
-        .camera-scanner { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 3500; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        /* Scanner Overlay */
+        .camera-scanner { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 4000; display: none; flex-direction: column; align-items: center; justify-content: center; }
         .camera-scanner.show { display: flex; }
-        #scannerVideo { width: 90%; max-height: 60vh; border: 3px solid #48bb78; border-radius: 10px; background: #000; object-fit: cover; }
+        #scannerVideo { width: 90%; border-radius: 10px; border: 2px solid #48bb78; }
     </style>
 </head>
 <body>
 
     <div class="welcome-modal" id="welcomeModal">
         <div class="welcome-content">
-            <h2>🎉 Birthday Bingo 🎉</h2>
+            <h2 id="modalTitle">Bingo Party</h2>
             <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
                 <button class="header-btn" id="resumeBtn" onclick="resumeGame()">📂 Resume Previous Game</button>
                 <button class="header-btn" style="background:#48bb78" onclick="confirmStartNew()">🎮 Start New Game</button>
@@ -75,114 +72,89 @@
     </div>
 
     <div class="header">
-        <h1 id="gameTitle">🎉 Birthday Bingo 🎉</h1>
+        <h1 id="gameTitle">Bingo Party</h1>
         <button class="header-btn" id="screenToggle" onclick="toggleScreen()">🎲 Rolling Screen</button>
     </div>
 
     <div class="screen active" id="cardsScreen">
         <div class="cards-container" id="cardsContainer"></div>
-        <button class="header-btn" style="width: 100%; padding: 20px;" onclick="addNewCard()">➕ Add New Card</button>
+        <button class="header-btn" style="width:100%; padding:20px;" onclick="addNewCard()">➕ Add New Card</button>
     </div>
 
     <div class="screen" id="rollingScreen">
         <div class="rolling-container">
-            <div class="barcode-section">
-                <svg id="barcodeDisplay"></svg>
-            </div>
+            <div class="barcode-section"><svg id="barcodeDisplay"></svg></div>
             <div>
-                <h3>Last Number Called</h3>
+                <h3>Called Number</h3>
                 <div id="currentNumber">-</div>
             </div>
-            <button class="btn-call-large" id="callButton" onclick="callNumber()">🎲 Call Next Number</button>
-            
-            <div class="rolling-controls">
-                <button class="btn-action" onclick="showAllNumbers()">👁️ View All</button>
-                <button class="btn-action" onclick="newGame()">🔄 New Game</button>
-                <button class="btn-action" onclick="showSettings()">⚙️ Settings</button>
+
+            <div class="recent-numbers-container">
+                <p style="font-weight:bold; margin-bottom:5px; color:#4a5568;">Last 5 Numbers</p>
+                <div class="recent-list" id="recentList"></div>
             </div>
-        </div>
-    </div>
 
-    <div class="overlay-page" id="allNumbersPage">
-        <h2>Called Numbers</h2>
-        <div id="categorizedGrids"></div>
-        <button class="header-btn" onclick="document.getElementById('allNumbersPage').classList.remove('show')" style="width:100%; margin-top:20px;">Close</button>
-    </div>
-
-    <div class="overlay-page" id="settingsPage">
-        <h2>⚙️ Settings</h2>
-        <div style="margin-top:20px;">
-            <label>Game Title:</label>
-            <input type="text" id="titleInput" style="width:100%; padding:15px; margin:10px 0; border:2px solid #ddd; border-radius:10px;">
-            <button class="header-btn" onclick="saveSettings()" style="width:100%; padding:15px;">💾 Save & Close</button>
+            <button class="header-btn" style="width:100%; padding:15px; font-size:1.2em;" onclick="callNumber()">🎲 Call Next Number</button>
+            <button class="header-btn" style="width:100%; margin-top:10px; background:#ed8936" onclick="confirmStartNew()">🔄 Reset Game</button>
         </div>
     </div>
 
     <div class="camera-scanner" id="cameraScanner">
-        <h3 style="color:white; margin-bottom:15px;">Scan Barcode to Verify</h3>
         <video id="scannerVideo" autoplay playsinline muted></video>
-        <button class="header-btn" style="background:#e53e3e; margin-top:20px" onclick="closeScanner()">Cancel</button>
+        <button class="header-btn" style="margin-top:20px; background:red;" onclick="closeScanner()">Close Scanner</button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js"></script>
+
     <script>
+        // --- State Management ---
         let cards = [];
         let calledNumbers = [];
         let availableNumbers = Array.from({length: 75}, (_, i) => i + 1);
-        let cardIdCounter = 0;
-        let gameTitle = "🎉 Birthday Bingo 🎉";
         let codeReader = null;
-        let currentScanningCardId = null;
+        let currentScanningId = null;
 
-        const CACHE_KEYS = { CARDS: 'bingo_cards', CALLED: 'bingo_called', AVAIL: 'bingo_avail', ID: 'bingo_id', TITLE: 'bingo_title' };
-
-        // Prefix Logic (Issue 2)
-        function getBingoPrefix(num) {
-            if (num <= 15) return 'B-'; if (num <= 30) return 'I-'; if (num <= 45) return 'N-';
-            if (num <= 60) return 'G-'; return 'O-';
+        function getPrefix(num) {
+            if (num <= 15) return 'B'; if (num <= 30) return 'I'; if (num <= 45) return 'N';
+            if (num <= 60) return 'G'; return 'O';
         }
 
+        // --- Persistence ---
         function saveState() {
-            localStorage.setItem(CACHE_KEYS.CARDS, JSON.stringify(cards));
-            localStorage.setItem(CACHE_KEYS.CALLED, JSON.stringify(calledNumbers));
-            localStorage.setItem(CACHE_KEYS.AVAIL, JSON.stringify(availableNumbers));
-            localStorage.setItem(CACHE_KEYS.ID, cardIdCounter);
-            localStorage.setItem(CACHE_KEYS.TITLE, gameTitle);
+            localStorage.setItem('bingo_state', JSON.stringify({ cards, calledNumbers, availableNumbers }));
         }
 
         function resumeGame() {
-            const saved = localStorage.getItem(CACHE_KEYS.CARDS);
+            const saved = localStorage.getItem('bingo_state');
             if (saved) {
-                cards = JSON.parse(saved);
-                calledNumbers = JSON.parse(localStorage.getItem(CACHE_KEYS.CALLED) || '[]');
-                availableNumbers = JSON.parse(localStorage.getItem(CACHE_KEYS.AVAIL) || '[]');
-                cardIdCounter = parseInt(localStorage.getItem(CACHE_KEYS.ID) || '0');
-                gameTitle = localStorage.getItem(CACHE_KEYS.TITLE) || gameTitle;
-                document.getElementById('gameTitle').textContent = gameTitle;
+                const state = JSON.parse(saved);
+                cards = state.cards;
+                calledNumbers = state.calledNumbers;
+                availableNumbers = state.availableNumbers;
                 renderCards();
                 updateBarcode();
-                if(calledNumbers.length > 0) {
-                    const last = calledNumbers[calledNumbers.length-1];
-                    document.getElementById('currentNumber').textContent = getBingoPrefix(last) + last;
-                }
+                updateRecentNumbers();
                 document.getElementById('welcomeModal').classList.add('hidden');
             }
         }
 
         function confirmStartNew() {
-            cards = []; calledNumbers = [];
-            availableNumbers = Array.from({length: 75}, (_, i) => i + 1);
-            cardIdCounter = 0;
-            document.getElementById('currentNumber').textContent = '-';
-            addNewCard();
-            updateBarcode();
-            saveState();
-            document.getElementById('welcomeModal').classList.add('hidden');
+            if(confirm("Start a new game? This clears all cards and history.")) {
+                cards = []; calledNumbers = [];
+                availableNumbers = Array.from({length: 75}, (_, i) => i + 1);
+                addNewCard();
+                updateBarcode();
+                updateRecentNumbers();
+                document.getElementById('currentNumber').textContent = "-";
+                document.getElementById('welcomeModal').classList.add('hidden');
+                saveState();
+            }
         }
 
+        // --- Card Logic ---
         function addNewCard() {
-            const card = { id: cardIdCounter++, numbers: [], marked: [], status: null };
+            const card = { id: Date.now(), numbers: [], marked: [] };
             for (let col = 0; col < 5; col++) {
                 let nums = Array.from({length: 15}, (_, i) => i + (col * 15) + 1).sort(() => Math.random() - 0.5);
                 card.numbers.push(nums.slice(0, 5));
@@ -200,6 +172,15 @@
                 const wrap = document.createElement('div');
                 wrap.className = 'bingo-card-wrapper';
                 
+                const header = document.createElement('div');
+                header.className = 'bingo-header-row';
+                ['B','I','N','G','O'].forEach(l => {
+                    const hCell = document.createElement('div');
+                    hCell.className = 'bingo-header-cell';
+                    hCell.textContent = l;
+                    header.appendChild(hCell);
+                });
+
                 const grid = document.createElement('div');
                 grid.className = 'bingo-grid';
                 for (let r = 0; r < 5; r++) {
@@ -208,45 +189,62 @@
                         cell.id = `cell-${card.id}-${r}-${c}`;
                         cell.className = `bingo-cell ${card.marked[r][c] ? 'marked' : ''} ${r === 2 && c === 2 ? 'free' : ''}`;
                         cell.textContent = (r === 2 && c === 2) ? 'FREE' : card.numbers[c][r];
-                        cell.onclick = () => { if(!(r === 2 && c === 2)) { card.marked[r][c] = !card.marked[r][c]; card.status = null; renderCards(); saveState(); } };
+                        cell.onclick = () => { 
+                            if(!(r===2 && c===2)) { 
+                                card.marked[r][c] = !card.marked[r][c]; 
+                                renderCards(); 
+                                saveState(); 
+                            } 
+                        };
                         grid.appendChild(cell);
                     }
                 }
-                
-                // Status Section (Issue 3)
-                const statusDiv = document.createElement('div');
-                statusDiv.className = 'card-status';
-                if(card.status === 'success') { statusDiv.textContent = "✅ Verification Success!"; statusDiv.classList.add('status-success'); }
-                else if(card.status === 'error') { statusDiv.textContent = "❌ Selection Mismatch!"; statusDiv.classList.add('status-error'); }
 
                 const btn = document.createElement('button');
                 btn.className = 'header-btn';
-                btn.style.width = '100%';
+                btn.style.width = '100%'; btn.style.marginTop = '15px';
                 btn.textContent = '📷 Verify Card';
                 btn.onclick = () => openScanner(card.id);
-                
+
+                wrap.appendChild(header);
                 wrap.appendChild(grid);
-                wrap.appendChild(statusDiv);
                 wrap.appendChild(btn);
                 container.appendChild(wrap);
             });
         }
 
+        // --- Rolling Logic ---
         function callNumber() {
             if (availableNumbers.length === 0) return;
             const idx = Math.floor(Math.random() * availableNumbers.length);
             const num = availableNumbers.splice(idx, 1)[0];
             calledNumbers.push(num);
             
-            const prefix = getBingoPrefix(num);
-            document.getElementById('currentNumber').textContent = prefix + num;
+            document.getElementById('currentNumber').textContent = getPrefix(num) + "-" + num;
             
-            // Voice Announcement
-            const utterance = new SpeechSynthesisUtterance(`${prefix} ${num}`);
-            window.speechSynthesis.speak(utterance);
-            
+            // Auto-mark
+            cards.forEach(card => {
+                for(let c=0; c<5; c++) {
+                    for(let r=0; r<5; r++) { if(card.numbers[c][r] === num) card.marked[r][c] = true; }
+                }
+            });
+
+            updateRecentNumbers();
             updateBarcode();
+            renderCards();
             saveState();
+        }
+
+        function updateRecentNumbers() {
+            const list = document.getElementById('recentList');
+            list.innerHTML = '';
+            const recent = [...calledNumbers].reverse().slice(0, 5);
+            recent.forEach(n => {
+                const box = document.createElement('div');
+                box.className = 'recent-box';
+                box.textContent = getPrefix(n) + n;
+                list.appendChild(box);
+            });
         }
 
         function updateBarcode() {
@@ -255,7 +253,49 @@
             while (bin.length % 4 !== 0) bin += "0";
             let hex = "";
             for (let i = 0; i < bin.length; i += 4) hex += parseInt(bin.substr(i, 4), 2).toString(16).toUpperCase();
-            JsBarcode("#barcodeDisplay", hex, { format: "CODE128", width: 1.5, height: 60, displayValue: true });
+            JsBarcode("#barcodeDisplay", hex, { format: "CODE128", width: 1.5, height: 60 });
+        }
+
+        // --- Scanner Logic ---
+        function openScanner(id) {
+            currentScanningId = id;
+            document.getElementById('cameraScanner').classList.add('show');
+            if (!codeReader) codeReader = new ZXing.BrowserMultiFormatReader();
+            codeReader.decodeFromVideoDevice(null, 'scannerVideo', (res) => { if(res) processScan(res.text); });
+        }
+
+        function processScan(hexData) {
+            closeScanner();
+            let binaryMap = "";
+            for (let i = 0; i < hexData.length; i++) {
+                binaryMap += parseInt(hexData[i], 16).toString(2).padStart(4, '0');
+            }
+
+            const card = cards.find(c => c.id === currentScanningId);
+            if (!card) return;
+
+            let mismatch = false;
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    if (r === 2 && c === 2) continue;
+                    const num = card.numbers[c][r];
+                    const actuallyCalled = binaryMap[num - 1] === '1';
+                    if (card.marked[r][c] !== actuallyCalled) {
+                        mismatch = true;
+                        const el = document.getElementById(`cell-${card.id}-${r}-${c}`);
+                        if (el) {
+                            el.classList.add('error-animate');
+                            setTimeout(() => el.classList.remove('error-animate'), 15000);
+                        }
+                    }
+                }
+            }
+            alert(mismatch ? "❌ Mismatch! Check the pulsing cells." : "✅ Card is correct!");
+        }
+
+        function closeScanner() {
+            document.getElementById('cameraScanner').classList.remove('show');
+            if (codeReader) codeReader.reset();
         }
 
         function toggleScreen() {
@@ -264,92 +304,7 @@
             document.getElementById('screenToggle').textContent = isCards ? '🎲 Rolling Screen' : '🎴 Cards Screen';
         }
 
-        function showAllNumbers() {
-            const container = document.getElementById('categorizedGrids');
-            container.innerHTML = '';
-            const sections = [
-                { l: 'B', s: 1, e: 15 }, { l: 'I', s: 16, e: 30 }, { l: 'N', s: 31, e: 45 },
-                { l: 'G', s: 46, e: 60 }, { l: 'O', s: 61, e: 75 }
-            ];
-
-            sections.forEach(sec => {
-                const div = document.createElement('div');
-                div.className = 'letter-section';
-                div.innerHTML = `<h3>${sec.l} (${sec.s}-${sec.e})</h3>`;
-                const grid = document.createElement('div');
-                grid.className = 'numbers-grid';
-                for(let i=sec.s; i<=sec.e; i++) {
-                    const box = document.createElement('div');
-                    box.className = `number-box ${calledNumbers.includes(i) ? 'called' : ''}`;
-                    box.textContent = i;
-                    grid.appendChild(box);
-                }
-                div.appendChild(grid);
-                container.appendChild(div);
-            });
-            document.getElementById('allNumbersPage').classList.add('show');
-        }
-
-        function showSettings() {
-            document.getElementById('titleInput').value = gameTitle;
-            document.getElementById('settingsPage').classList.add('show');
-        }
-
-        function saveSettings() {
-            gameTitle = document.getElementById('titleInput').value || gameTitle;
-            document.getElementById('gameTitle').textContent = gameTitle;
-            document.getElementById('settingsPage').classList.remove('show');
-            saveState();
-        }
-
-        function newGame() { if(confirm("Start a new game? Current progress will be deleted.")) confirmStartNew(); }
-
-        function processScan(hexData) {
-            closeScanner();
-            let binary = "";
-            for (let i = 0; i < hexData.length; i++) binary += parseInt(hexData[i], 16).toString(2).padStart(4, '0');
-
-            const card = cards.find(c => c.id === currentScanningCardId);
-            if (!card) return;
-
-            let mismatch = false;
-            for (let r = 0; r < 5; r++) {
-                for (let c = 0; c < 5; c++) {
-                    if (r === 2 && c === 2) continue;
-                    const num = card.numbers[c][r];
-                    const wasCalled = binary[num - 1] === "1";
-                    if (card.marked[r][c] !== wasCalled) {
-                        mismatch = true;
-                        const el = document.getElementById(`cell-${card.id}-${r}-${c}`);
-                        if(el) { el.classList.add('error-blink'); setTimeout(() => el.classList.remove('error-blink'), 10000); }
-                    }
-                }
-            }
-            card.status = mismatch ? 'error' : 'success';
-            renderCards();
-        }
-
-        function openScanner(cardId) {
-            currentScanningCardId = cardId;
-            document.getElementById('cameraScanner').classList.add('show');
-            if (!codeReader) codeReader = new ZXing.BrowserMultiFormatReader();
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-                .then(stream => {
-                    const video = document.getElementById('scannerVideo');
-                    video.srcObject = stream;
-                    codeReader.decodeFromVideoDevice(null, 'scannerVideo', (res) => { if(res) processScan(res.text); });
-                })
-                .catch(() => { alert("Camera access denied."); closeScanner(); });
-        }
-
-        function closeScanner() {
-            const video = document.getElementById('scannerVideo');
-            if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
-            document.getElementById('cameraScanner').classList.remove('show');
-            if (codeReader) codeReader.reset();
-        }
-
-        window.onload = () => { if (!localStorage.getItem(CACHE_KEYS.CARDS)) document.getElementById('resumeBtn').style.display = 'none'; };
+        window.onload = () => { if (!localStorage.getItem('bingo_state')) document.getElementById('resumeBtn').style.display = 'none'; };
     </script>
 </body>
 </html>
