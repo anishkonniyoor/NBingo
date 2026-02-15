@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bingo Game - Final</title>
+    <title>Bingo Party - Final</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 10px; }
@@ -17,14 +17,27 @@
         .screen { display: none; }
         .screen.active { display: block; }
 
-        /* Welcome Modal */
-        .welcome-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 5000; }
-        .welcome-modal.hidden { display: none; }
-        .welcome-content { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 90%; max-width: 400px; }
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 5000; }
+        .modal-overlay.hidden { display: none; }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 90%; max-width: 400px; position: relative; }
+        .close-modal-btn { position: absolute; top: 10px; right: 15px; font-size: 1.5em; cursor: pointer; background: none; border: none; color: #aaa; }
 
         /* Card Layout */
         .cards-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .bingo-card-wrapper { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; }
+        
+        .bingo-card-wrapper { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; border: 4px solid transparent; }
+        /* Issue 2: Dynamic Border Colors */
+        .bingo-card-wrapper.adult { border-color: #48bb78; /* Green */ }
+        .bingo-card-wrapper.kid { border-color: #f56565; /* Red */ }
+        
+        /* Card Header with Delete Btn */
+        .card-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .card-label { font-weight: bold; text-transform: uppercase; font-size: 0.8em; padding: 4px 8px; border-radius: 4px; color: white; }
+        .adult .card-label { background: #48bb78; }
+        .kid .card-label { background: #f56565; }
+
+        .delete-btn { background: #e53e3e; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 0.8em; cursor: pointer; }
         
         .bingo-header-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-bottom: 5px; }
         .bingo-header-cell { text-align: center; font-weight: 900; font-size: 1.4em; color: #764ba2; border-bottom: 3px solid #764ba2; }
@@ -34,13 +47,13 @@
         .bingo-cell.marked { background: #764ba2; color: white; }
         .bingo-cell.free { background: #ffd700; font-size: 0.7em; color: black; cursor: default; }
 
-        /* Mismatch Animation */
+        /* Error Animation */
         @keyframes errorPulse {
-            0% { transform: scale(1); background-color: #764ba2; }
-            50% { transform: scale(1.1); background-color: #ff4d4d; border-color: red; }
-            100% { transform: scale(1); background-color: #764ba2; }
+            0% { transform: scale(1); background: white; }
+            50% { transform: scale(1.1); background: #feb2b2; border-color: red; }
+            100% { transform: scale(1); background: white; }
         }
-        .error-animate { animation: errorPulse 0.5s infinite; border: 2px solid red !important; }
+        .error-animate { animation: errorPulse 0.8s infinite; border: 2px solid red !important; }
 
         /* Rolling Screen UI */
         .rolling-container { background: white; border-radius: 20px; padding: 25px; max-width: 600px; margin: 0 auto; text-align: center; }
@@ -59,17 +72,31 @@
         .camera-scanner { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 4000; display: none; flex-direction: column; align-items: center; justify-content: center; }
         .camera-scanner.show { display: flex; }
         #scannerVideo { width: 90%; border-radius: 10px; border: 2px solid #48bb78; }
+
+        /* Type Selection Buttons */
+        .type-btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 10px; font-size: 1.1em; font-weight: bold; color: white; cursor: pointer; }
+        .btn-adult { background: #48bb78; }
+        .btn-kid { background: #f56565; }
     </style>
 </head>
 <body>
 
-    <div class="welcome-modal" id="welcomeModal">
-        <div class="welcome-content">
+    <div class="modal-overlay" id="welcomeModal">
+        <div class="modal-content">
             <h2>Bingo Party</h2>
             <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
                 <button class="header-btn" id="resumeBtn" onclick="resumeGame()">📂 Resume Previous Game</button>
                 <button class="header-btn" style="background:#48bb78" onclick="confirmStartNew()">🎮 Start New Game</button>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="cardTypeModal">
+        <div class="modal-content">
+            <button class="close-modal-btn" onclick="document.getElementById('cardTypeModal').classList.add('hidden')">&times;</button>
+            <h3>Who is this card for?</h3>
+            <button class="type-btn btn-adult" onclick="createCard('adult')">👨 Adult (Green)</button>
+            <button class="type-btn btn-kid" onclick="createCard('kid')">👶 Kid (Red)</button>
         </div>
     </div>
 
@@ -80,7 +107,7 @@
 
     <div class="screen active" id="cardsScreen">
         <div class="cards-container" id="cardsContainer"></div>
-        <button class="header-btn" style="width:100%; padding:20px;" onclick="addNewCard()">➕ Add New Card</button>
+        <button class="header-btn" style="width:100%; padding:20px;" onclick="openTypeModal()">➕ Add New Card</button>
     </div>
 
     <div class="screen" id="rollingScreen">
@@ -133,7 +160,6 @@
         let codeReader = null;
         let currentScanningId = null;
 
-        // Base32 Charset to fit 5 bits (0-31) into 1 char
         const BASE32_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 
         function getPrefix(num) {
@@ -141,24 +167,32 @@
             if (num <= 60) return 'G'; return 'O';
         }
 
-        // --- Voice Announcement (Issue 3 Fix) ---
+        // Voice
         function speakNumber(text) {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Stop any current speech
+                window.speechSynthesis.cancel();
                 const msg = new SpeechSynthesisUtterance(text);
                 msg.rate = 0.9;
                 window.speechSynthesis.speak(msg);
             }
         }
 
-        // --- Logic: 5-bit Groups to 1 Char (Base32) ---
-        function generateBarcodeString() {
+        // Barcode
+        function generateBarcodeHex() {
             let binary = "";
             for (let i = 1; i <= 75; i++) {
                 binary += calledNumbers.includes(i) ? "1" : "0";
             }
-            let result = "";
+            let hex = "";
             for (let i = 0; i < binary.length; i += 5) {
+                let chunk = binary.substr(i, 5);
+                hex += parseInt(chunk, 2).toString(16).toUpperCase(); // Still using hex chars logic for compatibility
+            }
+            // For 15 chars strict mapping we use the base32 logic inside display logic if needed,
+            // but standard Hex logic works fine for 15 chars if we use custom mapping. 
+            // Let's stick to the Base32 map to ensure it fits 5 bits perfectly into 1 char.
+            let result = "";
+            for(let i=0; i<binary.length; i+=5) {
                 let chunk = binary.substr(i, 5);
                 let val = parseInt(chunk, 2);
                 result += BASE32_CHARS[val];
@@ -166,18 +200,18 @@
             return result;
         }
 
-        function decodeStringToBinary(str) {
+        function decodeString(str) {
             let bin = "";
             for (let i = 0; i < str.length; i++) {
                 let val = BASE32_CHARS.indexOf(str[i]);
-                if (val === -1) val = 0; // Fallback
+                if (val === -1) val = 0;
                 bin += val.toString(2).padStart(5, '0');
             }
             return bin;
         }
 
         function updateBarcode() {
-            const data = generateBarcodeString();
+            const data = generateBarcodeHex();
             JsBarcode("#barcodeDisplay", data, { format: "CODE128", width: 1.5, height: 60, displayValue: false });
         }
 
@@ -190,7 +224,7 @@
             const displayText = getPrefix(num) + " " + num;
             document.getElementById('currentNumber').textContent = getPrefix(num) + "-" + num;
             
-            speakNumber(displayText); // Trigger Voice
+            speakNumber(displayText);
             updateRecentNumbers();
             updateBarcode();
             saveState();
@@ -207,13 +241,59 @@
             });
         }
 
+        // --- Card Management ---
+        function openTypeModal() {
+            document.getElementById('cardTypeModal').classList.remove('hidden');
+        }
+
+        function createCard(type) {
+            document.getElementById('cardTypeModal').classList.add('hidden');
+            const card = { id: Date.now(), type: type, numbers: [], marked: [] };
+            
+            // Generate numbers
+            for (let col = 0; col < 5; col++) {
+                let range = Array.from({length: 15}, (_, i) => i + (col * 15) + 1).sort(() => Math.random() - 0.5);
+                card.numbers.push(range.slice(0, 5));
+            }
+            // Generate Marks
+            for (let r = 0; r < 5; r++) card.marked.push(Array.from({length: 5}, (_, c) => r === 2 && c === 2));
+            
+            cards.push(card);
+            renderCards();
+            saveState();
+        }
+
+        function deleteCard(id) {
+            if(confirm("Are you sure you want to delete this card?")) {
+                cards = cards.filter(c => c.id !== id);
+                renderCards();
+                saveState();
+            }
+        }
+
         function renderCards() {
             const container = document.getElementById('cardsContainer');
             container.innerHTML = '';
             cards.forEach(card => {
+                // Apply class based on type
                 const wrap = document.createElement('div');
-                wrap.className = 'bingo-card-wrapper';
+                wrap.className = `bingo-card-wrapper ${card.type || 'adult'}`; 
                 
+                // Top Bar with Label and Delete
+                const topBar = document.createElement('div');
+                topBar.className = 'card-top-bar';
+                const label = document.createElement('span');
+                label.className = 'card-label';
+                label.textContent = card.type === 'kid' ? '👶 Kid' : '👨 Adult';
+                
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-btn';
+                delBtn.textContent = '🗑️ Delete';
+                delBtn.onclick = () => deleteCard(card.id);
+                
+                topBar.append(label, delBtn);
+
+                // Bingo Header
                 const header = document.createElement('div');
                 header.className = 'bingo-header-row';
                 ['B','I','N','G','O'].forEach(l => {
@@ -223,6 +303,7 @@
                     header.appendChild(hCell);
                 });
 
+                // Grid
                 const grid = document.createElement('div');
                 grid.className = 'bingo-grid';
                 for (let r = 0; r < 5; r++) {
@@ -240,38 +321,32 @@
                 b.textContent = "📷 Verify";
                 b.onclick = () => openScanner(card.id);
                 
-                wrap.append(header, grid, b);
+                wrap.append(topBar, header, grid, b);
                 container.appendChild(wrap);
             });
         }
 
-        // --- Issue 1 & 2 Fix: Mismatch Logic ---
+        // --- Scanning Logic ---
         function processScan(scannedString) {
             closeScanner();
-            const calledBinary = decodeStringToBinary(scannedString);
+            const calledBinary = decodeString(scannedString);
             const card = cards.find(c => c.id === currentScanningId);
             let errors = false;
 
-            // Clear previous errors first
             const allCells = document.querySelectorAll('.bingo-cell');
             allCells.forEach(el => el.classList.remove('error-animate'));
 
             for (let r = 0; r < 5; r++) {
                 for (let c = 0; c < 5; c++) {
                     if (r === 2 && c === 2) continue;
-                    
                     const num = card.numbers[c][r];
-                    // num is 1-based, binary string is 0-based
                     const actuallyCalled = calledBinary[num - 1] === '1';
                     
-                    // Logic: Mismatch ONLY if User Marked it, but it was NOT called.
-                    // Missing a call (Not Marked & Called) is NOT an error.
-                    if (card.marked[r][c] === true && actuallyCalled === false) {
+                    if (card.marked[r][c] && !actuallyCalled) {
                         errors = true;
                         const el = document.getElementById(`cell-${card.id}-${r}-${c}`);
                         if (el) {
                             el.classList.add('error-animate');
-                            // Remove animation after 15 seconds
                             setTimeout(() => el.classList.remove('error-animate'), 15000);
                         }
                     }
@@ -325,11 +400,8 @@
 
         function openScanner(id) {
             currentScanningId = id;
-            
-            // Fix Issue 2: Clean previous state before opening
             const allCells = document.querySelectorAll('.bingo-cell');
             allCells.forEach(el => el.classList.remove('error-animate'));
-
             document.getElementById('cameraScanner').classList.add('show');
             if (!codeReader) codeReader = new ZXing.BrowserMultiFormatReader();
             codeReader.decodeFromVideoDevice(null, 'scannerVideo', (res) => { if(res) processScan(res.text); });
@@ -340,18 +412,6 @@
             if (codeReader) codeReader.reset();
         }
 
-        function addNewCard() {
-            const card = { id: Date.now(), numbers: [], marked: [] };
-            for (let col = 0; col < 5; col++) {
-                let range = Array.from({length: 15}, (_, i) => i + (col * 15) + 1).sort(() => Math.random() - 0.5);
-                card.numbers.push(range.slice(0, 5));
-            }
-            for (let r = 0; r < 5; r++) card.marked.push(Array.from({length: 5}, (_, c) => r === 2 && c === 2));
-            cards.push(card);
-            renderCards();
-            saveState();
-        }
-
         function toggleScreen() {
             const isCards = document.getElementById('cardsScreen').classList.toggle('active');
             document.getElementById('rollingScreen').classList.toggle('active');
@@ -359,11 +419,11 @@
         }
 
         function saveState() {
-            localStorage.setItem('bingo_v4', JSON.stringify({ cards, calledNumbers, availableNumbers, gameTitle }));
+            localStorage.setItem('bingo_v5', JSON.stringify({ cards, calledNumbers, availableNumbers, gameTitle }));
         }
 
         function resumeGame() {
-            const saved = localStorage.getItem('bingo_v4');
+            const saved = localStorage.getItem('bingo_v5');
             if (saved) {
                 const s = JSON.parse(saved);
                 cards = s.cards; calledNumbers = s.calledNumbers; availableNumbers = s.availableNumbers;
@@ -377,7 +437,8 @@
         function confirmStartNew() {
             if(confirm("Reset the game? All cards and called numbers will be deleted.")) {
                 cards = []; calledNumbers = []; availableNumbers = Array.from({length: 75}, (_, i) => i + 1);
-                addNewCard();
+                // Prompt for first card
+                openTypeModal();
                 document.getElementById('welcomeModal').classList.add('hidden');
                 document.getElementById('currentNumber').textContent = "-";
                 updateBarcode(); updateRecentNumbers();
@@ -385,7 +446,7 @@
             }
         }
 
-        window.onload = () => { if(!localStorage.getItem('bingo_v4')) document.getElementById('resumeBtn').style.display='none'; };
+        window.onload = () => { if(!localStorage.getItem('bingo_v5')) document.getElementById('resumeBtn').style.display='none'; };
     </script>
 </body>
 </html>
