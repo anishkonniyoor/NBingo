@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bingo Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 10px; }
+
+        /* Header */
+        .header { background: white; padding: 15px 20px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .header h1 { color: #667eea; font-size: 1.4em; }
+        .header-btn { background: #667eea; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-size: 1em; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+
+        /* Screens */
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* Welcome Modal */
+        .welcome-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; z-index: 3000; }
+        .welcome-modal.hidden { display: none !important; }
+        .welcome-content { background: white; padding: 30px; border-radius: 20px; text-align: center; max-width: 500px; width: 90%; }
+
+        /* Cards Layout */
+        .cards-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .bingo-card-wrapper { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; }
+        .bingo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin: 10px 0; }
+        .bingo-cell { aspect-ratio: 1; background: white; border: 2px solid #667eea; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 1.2em; font-weight: bold; cursor: pointer; }
+        .bingo-cell.marked { background: #764ba2; color: white; }
+        .bingo-cell.free { background: #ffd700; font-size: 0.8em; color: black; cursor: default; }
+
+        /* Verification Status inside Card */
+        .card-status { padding: 8px; border-radius: 8px; font-weight: bold; font-size: 0.9em; margin: 10px 0; display: none; text-align: center; }
+        .status-success { display: block; background: #c6f6d5; color: #22543d; }
+        .status-error { display: block; background: #fed7d7; color: #822727; }
+
+        @keyframes errorBlink { 0%, 100% { background: white; } 50% { background: #fc8181; } }
+        .error-blink { animation: errorBlink 0.5s ease-in-out 20; }
+
+        /* Rolling Screen UI */
+        .rolling-container { background: white; border-radius: 20px; padding: 25px; max-width: 600px; margin: 0 auto; text-align: center; }
+        .barcode-section { background: #f8f9fa; padding: 10px; border-radius: 10px; margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; }
+        #barcodeDisplay { max-width: 100%; height: auto; }
+        #currentNumber { font-size: 4em; color: #667eea; font-weight: bold; margin: 10px 0; }
+        
+        .rolling-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .btn-action { padding: 15px 5px; font-size: 0.9em; background: #edf2f7; color: #4a5568; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-call-large { width: 100%; padding: 20px; background: #667eea; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1.2em; cursor: pointer; }
+
+        /* Overlays */
+        .overlay-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2500; display: none; overflow-y: auto; padding: 20px; }
+        .overlay-page.show { display: block; }
+        .letter-section { margin-bottom: 20px; }
+        .numbers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; margin-top: 10px; }
+        .number-box { background: #edf2f7; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; }
+        .number-box.called { background: #48bb78; color: white; }
+
+        /* Scanner */
+        .camera-scanner { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 3500; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .camera-scanner.show { display: flex; }
+        #scannerVideo { width: 90%; max-height: 60vh; border: 3px solid #48bb78; border-radius: 10px; background: #000; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+    <div class="welcome-modal" id="welcomeModal">
+        <div class="welcome-content">
+            <h2>🎉 Birthday Bingo 🎉</h2>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+                <button class="header-btn" id="resumeBtn" onclick="resumeGame()">📂 Resume Previous Game</button>
+                <button class="header-btn" style="background:#48bb78" onclick="confirmStartNew()">🎮 Start New Game</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1 id="gameTitle">🎉 Birthday Bingo 🎉</h1>
+        <button class="header-btn" id="screenToggle" onclick="toggleScreen()">🎲 Rolling Screen</button>
+    </div>
+
+    <div class="screen active" id="cardsScreen">
+        <div class="cards-container" id="cardsContainer"></div>
+        <button class="header-btn" style="width: 100%; padding: 20px;" onclick="addNewCard()">➕ Add New Card</button>
+    </div>
+
+    <div class="screen" id="rollingScreen">
+        <div class="rolling-container">
+            <div class="barcode-section">
+                <svg id="barcodeDisplay"></svg>
+            </div>
+            <div>
+                <h3>Last Number Called</h3>
+                <div id="currentNumber">-</div>
+            </div>
+            <button class="btn-call-large" id="callButton" onclick="callNumber()">🎲 Call Next Number</button>
+            
+            <div class="rolling-controls">
+                <button class="btn-action" onclick="showAllNumbers()">👁️ View All</button>
+                <button class="btn-action" onclick="newGame()">🔄 New Game</button>
+                <button class="btn-action" onclick="showSettings()">⚙️ Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay-page" id="allNumbersPage">
+        <h2>Called Numbers</h2>
+        <div id="categorizedGrids"></div>
+        <button class="header-btn" onclick="document.getElementById('allNumbersPage').classList.remove('show')" style="width:100%; margin-top:20px;">Close</button>
+    </div>
+
+    <div class="overlay-page" id="settingsPage">
+        <h2>⚙️ Settings</h2>
+        <div style="margin-top:20px;">
+            <label>Game Title:</label>
+            <input type="text" id="titleInput" style="width:100%; padding:15px; margin:10px 0; border:2px solid #ddd; border-radius:10px;">
+            <button class="header-btn" onclick="saveSettings()" style="width:100%; padding:15px;">💾 Save & Close</button>
+        </div>
+    </div>
+
+    <div class="camera-scanner" id="cameraScanner">
+        <h3 style="color:white; margin-bottom:15px;">Scan Barcode to Verify</h3>
+        <video id="scannerVideo" autoplay playsinline muted></video>
+        <button class="header-btn" style="background:#e53e3e; margin-top:20px" onclick="closeScanner()">Cancel</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js"></script>
+    <script>
+        let cards = [];
+        let calledNumbers = [];
+        let availableNumbers = Array.from({length: 75}, (_, i) => i + 1);
+        let cardIdCounter = 0;
+        let gameTitle = "🎉 Birthday Bingo 🎉";
+        let codeReader = null;
+        let currentScanningCardId = null;
+
+        const CACHE_KEYS = { CARDS: 'bingo_cards', CALLED: 'bingo_called', AVAIL: 'bingo_avail', ID: 'bingo_id', TITLE: 'bingo_title' };
+
+        // Prefix Logic (Issue 2)
+        function getBingoPrefix(num) {
+            if (num <= 15) return 'B-'; if (num <= 30) return 'I-'; if (num <= 45) return 'N-';
+            if (num <= 60) return 'G-'; return 'O-';
+        }
+
+        function saveState() {
+            localStorage.setItem(CACHE_KEYS.CARDS, JSON.stringify(cards));
+            localStorage.setItem(CACHE_KEYS.CALLED, JSON.stringify(calledNumbers));
+            localStorage.setItem(CACHE_KEYS.AVAIL, JSON.stringify(availableNumbers));
+            localStorage.setItem(CACHE_KEYS.ID, cardIdCounter);
+            localStorage.setItem(CACHE_KEYS.TITLE, gameTitle);
+        }
+
+        function resumeGame() {
+            const saved = localStorage.getItem(CACHE_KEYS.CARDS);
+            if (saved) {
+                cards = JSON.parse(saved);
+                calledNumbers = JSON.parse(localStorage.getItem(CACHE_KEYS.CALLED) || '[]');
+                availableNumbers = JSON.parse(localStorage.getItem(CACHE_KEYS.AVAIL) || '[]');
+                cardIdCounter = parseInt(localStorage.getItem(CACHE_KEYS.ID) || '0');
+                gameTitle = localStorage.getItem(CACHE_KEYS.TITLE) || gameTitle;
+                document.getElementById('gameTitle').textContent = gameTitle;
+                renderCards();
+                updateBarcode();
+                if(calledNumbers.length > 0) {
+                    const last = calledNumbers[calledNumbers.length-1];
+                    document.getElementById('currentNumber').textContent = getBingoPrefix(last) + last;
+                }
+                document.getElementById('welcomeModal').classList.add('hidden');
+            }
+        }
+
+        function confirmStartNew() {
+            cards = []; calledNumbers = [];
+            availableNumbers = Array.from({length: 75}, (_, i) => i + 1);
+            cardIdCounter = 0;
+            document.getElementById('currentNumber').textContent = '-';
+            addNewCard();
+            updateBarcode();
+            saveState();
+            document.getElementById('welcomeModal').classList.add('hidden');
+        }
+
+        function addNewCard() {
+            const card = { id: cardIdCounter++, numbers: [], marked: [], status: null };
+            for (let col = 0; col < 5; col++) {
+                let nums = Array.from({length: 15}, (_, i) => i + (col * 15) + 1).sort(() => Math.random() - 0.5);
+                card.numbers.push(nums.slice(0, 5));
+            }
+            for (let r = 0; r < 5; r++) card.marked.push(Array.from({length: 5}, (_, c) => r === 2 && c === 2));
+            cards.push(card);
+            renderCards();
+            saveState();
+        }
+
+        function renderCards() {
+            const container = document.getElementById('cardsContainer');
+            container.innerHTML = '';
+            cards.forEach(card => {
+                const wrap = document.createElement('div');
+                wrap.className = 'bingo-card-wrapper';
+                
+                const grid = document.createElement('div');
+                grid.className = 'bingo-grid';
+                for (let r = 0; r < 5; r++) {
+                    for (let c = 0; c < 5; c++) {
+                        const cell = document.createElement('div');
+                        cell.id = `cell-${card.id}-${r}-${c}`;
+                        cell.className = `bingo-cell ${card.marked[r][c] ? 'marked' : ''} ${r === 2 && c === 2 ? 'free' : ''}`;
+                        cell.textContent = (r === 2 && c === 2) ? 'FREE' : card.numbers[c][r];
+                        cell.onclick = () => { if(!(r === 2 && c === 2)) { card.marked[r][c] = !card.marked[r][c]; card.status = null; renderCards(); saveState(); } };
+                        grid.appendChild(cell);
+                    }
+                }
+                
+                // Status Section (Issue 3)
+                const statusDiv = document.createElement('div');
+                statusDiv.className = 'card-status';
+                if(card.status === 'success') { statusDiv.textContent = "✅ Verification Success!"; statusDiv.classList.add('status-success'); }
+                else if(card.status === 'error') { statusDiv.textContent = "❌ Selection Mismatch!"; statusDiv.classList.add('status-error'); }
+
+                const btn = document.createElement('button');
+                btn.className = 'header-btn';
+                btn.style.width = '100%';
+                btn.textContent = '📷 Verify Card';
+                btn.onclick = () => openScanner(card.id);
+                
+                wrap.appendChild(grid);
+                wrap.appendChild(statusDiv);
+                wrap.appendChild(btn);
+                container.appendChild(wrap);
+            });
+        }
+
+        function callNumber() {
+            if (availableNumbers.length === 0) return;
+            const idx = Math.floor(Math.random() * availableNumbers.length);
+            const num = availableNumbers.splice(idx, 1)[0];
+            calledNumbers.push(num);
+            
+            const prefix = getBingoPrefix(num);
+            document.getElementById('currentNumber').textContent = prefix + num;
+            
+            // Voice Announcement
+            const utterance = new SpeechSynthesisUtterance(`${prefix} ${num}`);
+            window.speechSynthesis.speak(utterance);
+            
+            updateBarcode();
+            saveState();
+        }
+
+        function updateBarcode() {
+            let bin = "";
+            for (let i = 1; i <= 75; i++) bin += calledNumbers.includes(i) ? "1" : "0";
+            while (bin.length % 4 !== 0) bin += "0";
+            let hex = "";
+            for (let i = 0; i < bin.length; i += 4) hex += parseInt(bin.substr(i, 4), 2).toString(16).toUpperCase();
+            JsBarcode("#barcodeDisplay", hex, { format: "CODE128", width: 1.5, height: 60, displayValue: true });
+        }
+
+        function toggleScreen() {
+            const isCards = document.getElementById('cardsScreen').classList.toggle('active');
+            document.getElementById('rollingScreen').classList.toggle('active');
+            document.getElementById('screenToggle').textContent = isCards ? '🎲 Rolling Screen' : '🎴 Cards Screen';
+        }
+
+        function showAllNumbers() {
+            const container = document.getElementById('categorizedGrids');
+            container.innerHTML = '';
+            const sections = [
+                { l: 'B', s: 1, e: 15 }, { l: 'I', s: 16, e: 30 }, { l: 'N', s: 31, e: 45 },
+                { l: 'G', s: 46, e: 60 }, { l: 'O', s: 61, e: 75 }
+            ];
+
+            sections.forEach(sec => {
+                const div = document.createElement('div');
+                div.className = 'letter-section';
+                div.innerHTML = `<h3>${sec.l} (${sec.s}-${sec.e})</h3>`;
+                const grid = document.createElement('div');
+                grid.className = 'numbers-grid';
+                for(let i=sec.s; i<=sec.e; i++) {
+                    const box = document.createElement('div');
+                    box.className = `number-box ${calledNumbers.includes(i) ? 'called' : ''}`;
+                    box.textContent = i;
+                    grid.appendChild(box);
+                }
+                div.appendChild(grid);
+                container.appendChild(div);
+            });
+            document.getElementById('allNumbersPage').classList.add('show');
+        }
+
+        function showSettings() {
+            document.getElementById('titleInput').value = gameTitle;
+            document.getElementById('settingsPage').classList.add('show');
+        }
+
+        function saveSettings() {
+            gameTitle = document.getElementById('titleInput').value || gameTitle;
+            document.getElementById('gameTitle').textContent = gameTitle;
+            document.getElementById('settingsPage').classList.remove('show');
+            saveState();
+        }
+
+        function newGame() { if(confirm("Start a new game? Current progress will be deleted.")) confirmStartNew(); }
+
+        function processScan(hexData) {
+            closeScanner();
+            let binary = "";
+            for (let i = 0; i < hexData.length; i++) binary += parseInt(hexData[i], 16).toString(2).padStart(4, '0');
+
+            const card = cards.find(c => c.id === currentScanningCardId);
+            if (!card) return;
+
+            let mismatch = false;
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    if (r === 2 && c === 2) continue;
+                    const num = card.numbers[c][r];
+                    const wasCalled = binary[num - 1] === "1";
+                    if (card.marked[r][c] !== wasCalled) {
+                        mismatch = true;
+                        const el = document.getElementById(`cell-${card.id}-${r}-${c}`);
+                        if(el) { el.classList.add('error-blink'); setTimeout(() => el.classList.remove('error-blink'), 10000); }
+                    }
+                }
+            }
+            card.status = mismatch ? 'error' : 'success';
+            renderCards();
+        }
+
+        function openScanner(cardId) {
+            currentScanningCardId = cardId;
+            document.getElementById('cameraScanner').classList.add('show');
+            if (!codeReader) codeReader = new ZXing.BrowserMultiFormatReader();
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(stream => {
+                    const video = document.getElementById('scannerVideo');
+                    video.srcObject = stream;
+                    codeReader.decodeFromVideoDevice(null, 'scannerVideo', (res) => { if(res) processScan(res.text); });
+                })
+                .catch(() => { alert("Camera access denied."); closeScanner(); });
+        }
+
+        function closeScanner() {
+            const video = document.getElementById('scannerVideo');
+            if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
+            document.getElementById('cameraScanner').classList.remove('show');
+            if (codeReader) codeReader.reset();
+        }
+
+        window.onload = () => { if (!localStorage.getItem(CACHE_KEYS.CARDS)) document.getElementById('resumeBtn').style.display = 'none'; };
+    </script>
+</body>
+</html>
